@@ -3,91 +3,199 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Terminal</title>
+<title>Terminal Tabs</title>
 <style>
-    body {
-        margin: 0;
-        background-color: #000000;
-        color: #00ff00;
-        font-family: Consolas, monospace;
-        font-size: 16px;
-    }
+body {
+    margin: 0;
+    background: #000;
+    color: #00ff00;
+    font-family: Consolas, monospace;
+}
 
-    #terminal {
-        padding: 10px;
-        white-space: pre-wrap;
-        height: 100vh;
-        overflow-y: auto;
-    }
+#tabs {
+    display: flex;
+    background: #111;
+    border-bottom: 1px solid #00ff00;
+}
 
-    .input-line {
-        display: flex;
-    }
+.tab {
+    padding: 5px 10px;
+    cursor: pointer;
+    border-right: 1px solid #00ff00;
+}
 
-    .prompt {
-        margin-right: 5px;
-    }
+.tab.active {
+    background: #003300;
+}
 
-    input {
-        background: none;
-        border: none;
-        outline: none;
-        color: #00ff00;
-        font-family: inherit;
-        font-size: inherit;
-        width: 100%;
-    }
+.tab button {
+    margin-left: 5px;
+    background: none;
+    border: none;
+    color: #00ff00;
+    cursor: pointer;
+}
+
+#terminal {
+    padding: 10px;
+    height: calc(100vh - 30px);
+    overflow-y: auto;
+}
+
+.input-line {
+    display: flex;
+}
+
+input {
+    background: none;
+    border: none;
+    outline: none;
+    color: #00ff00;
+    width: 100%;
+    font-family: inherit;
+}
+
+iframe {
+    width: 100%;
+    height: calc(100vh - 30px);
+    border: none;
+}
 </style>
 </head>
 <body>
 
-<div id="terminal">
-    <div>Fake Terminal v1.0</div>
-    <div>Type "help" for commands.</div>
-    <div class="input-line">
-        <span class="prompt">&gt;</span>
-        <input type="text" id="input" autofocus>
-    </div>
-</div>
+<div id="tabs"></div>
+<div id="content"></div>
 
 <script>
-const terminal = document.getElementById("terminal");
-const input = document.getElementById("input");
+let tabs = [];
+let activeTab = null;
 
-input.addEventListener("keydown", function(e) {
-    if (e.key === "Enter") {
-        const command = input.value.trim();
+function createTerminalTab() {
+    const tabId = "tab_" + Date.now();
 
-        addLine(`> ${command}`);
-        handleCommand(command);
+    const tab = {
+        id: tabId,
+        type: "terminal"
+    };
 
-        input.value = "";
-    }
-});
-
-function addLine(text) {
-    const line = document.createElement("div");
-    line.textContent = text;
-    terminal.insertBefore(line, terminal.lastElementChild);
-    terminal.scrollTop = terminal.scrollHeight;
+    tabs.push(tab);
+    setActive(tabId);
 }
 
-function handleCommand(cmd) {
-    switch(cmd.toLowerCase()) {
-        case "help":
-            addLine("Available commands: help, clear, echo");
-            break;
-        case "clear":
-            terminal.innerHTML = '';
-            break;
-        default:
-            if (cmd.startsWith("echo ")) {
-                addLine(cmd.slice(5));
-            } else if (cmd !== "") {
-                addLine("Unknown command: " + cmd);
+function createWebTab(url) {
+    const tabId = "tab_" + Date.now();
+
+    const tab = {
+        id: tabId,
+        type: "web",
+        url: url,
+        muted: false
+    };
+
+    tabs.push(tab);
+    setActive(tabId);
+}
+
+function closeTab(id) {
+    tabs = tabs.filter(t => t.id !== id);
+    if (tabs.length > 0) {
+        setActive(tabs[0].id);
+    } else {
+        createTerminalTab();
+    }
+}
+
+function toggleMute(id) {
+    const tab = tabs.find(t => t.id === id);
+    if (!tab || tab.type !== "web") return;
+
+    tab.muted = !tab.muted;
+    render();
+}
+
+function setActive(id) {
+    activeTab = id;
+    render();
+}
+
+function render() {
+    const tabsDiv = document.getElementById("tabs");
+    const contentDiv = document.getElementById("content");
+
+    tabsDiv.innerHTML = "";
+    contentDiv.innerHTML = "";
+
+    tabs.forEach(tab => {
+        const tabEl = document.createElement("div");
+        tabEl.className = "tab" + (tab.id === activeTab ? " active" : "");
+        tabEl.onclick = () => setActive(tab.id);
+
+        tabEl.textContent = tab.type === "terminal" ? "Terminal" : "Web";
+
+        const closeBtn = document.createElement("button");
+        closeBtn.textContent = "x";
+        closeBtn.onclick = (e) => {
+            e.stopPropagation();
+            closeTab(tab.id);
+        };
+
+        tabEl.appendChild(closeBtn);
+
+        if (tab.type === "web") {
+            const muteBtn = document.createElement("button");
+            muteBtn.textContent = tab.muted ? "🔇" : "🔊";
+            muteBtn.onclick = (e) => {
+                e.stopPropagation();
+                toggleMute(tab.id);
+            };
+            tabEl.appendChild(muteBtn);
+        }
+
+        tabsDiv.appendChild(tabEl);
+
+        if (tab.id === activeTab) {
+            if (tab.type === "terminal") {
+                const term = document.createElement("div");
+                term.id = "terminal";
+                term.innerHTML = `
+                    <div>Type BootGameWebsite</div>
+                    <div class="input-line">
+                        <span>&gt;</span>
+                        <input id="input" autofocus>
+                    </div>
+                `;
+                contentDiv.appendChild(term);
+
+                const input = term.querySelector("input");
+                input.addEventListener("keydown", function(e) {
+                    if (e.key === "Enter") {
+                        const cmd = input.value.trim();
+
+                        if (cmd === "BootGameWebsite") {
+                            createWebTab("https://garebear5245-ux.github.io/mooncraft/");
+                        }
+
+                        input.value = "";
+                    }
+                });
+
+            } else if (tab.type === "web") {
+                const frame = document.createElement("iframe");
+                frame.src = tab.url;
+
+                if (tab.muted) {
+                    frame.allow = "autoplay";
+                }
+
+                contentDiv.appendChild(frame);
             }
-    }
+        }
+    });
 }
+
+// Start with one terminal tab
+createTerminalTab();
 </script>
 
 </body>
