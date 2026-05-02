@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terminal</title>
+<style>
+    body {
+        margin: 0;
+        background-color: #000000;
+        color: #00ff00;
+        font-family: Consolas, monospace;
+        font-size: 16px;
+    }
+
+    #terminal {
+        padding: 10px;
+        white-space: pre-wrap;
+        height: 100vh;
+        overflow-y: auto;
+    }
+
+    .input-line {
+        display: flex;
+    }
+
+    .prompt {
+        margin-right: 5px;
+    }
+
+    input {
+        background: none;
+        border: none;
+        outline: none;
+        color: #00ff00;
+        font-family: inherit;
+        font-size: inherit;
+        width: 100%;
+    }
+</style>
+</head>
+<body>
+
+<div id="terminal">
+    <div>Fake Terminal v1.0</div>
+    <div>Type "help" for commands.</div>
+    <div class="input-line">
+        <span class="prompt">&gt;</span>
+        <input type="text" id="input" autofocus>
+    </div>
+</div>
+
+<script>
+const terminal = document.getElementById("terminal");
+const input = document.getElementById("input");
+
+input.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
+        const command = input.value.trim();
+
+        addLine(`> ${command}`);
+        handleCommand(command);
+
+        input.value = "";
+    }
+});
+
+function addLine(text) {
+    const line = document.createElement("div");
+    line.textContent = text;
+    terminal.insertBefore(line, terminal.lastElementChild);
+    terminal.scrollTop = terminal.scrollHeight;
+}
+
+function handleCommand(cmd) {
+    switch(cmd.toLowerCase()) {
+        case "help":
+            addLine("Available commands: help, clear, echo");
+            break;
+        case "clear":
+            terminal.innerHTML = '';
+            break;
+        default:
+            if (cmd.startsWith("echo ")) {
+                addLine(cmd.slice(5));
+            } else if (cmd !== "") {
+                addLine("Unknown command: " + cmd);
+            }
+    }
+}
+</script>
+
+</body>
+</html>
